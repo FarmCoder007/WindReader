@@ -17,17 +17,33 @@ import android.widget.Scroller;
  * 仿真阅读模式
  */
 public class SimulationAnimation extends AnimationProvider {
-    private int mCornerX = 1; // 拖拽点对应的页脚
+    /**
+     * 拖拽点对应的页脚
+     */
+    private int mCornerX = 1;
     private int mCornerY = 1;
     private Path mPath0;
     private Path mPath1;
 
-    PointF mBezierStart1 = new PointF(); // 贝塞尔曲线起始点
-    PointF mBezierControl1 = new PointF(); // 贝塞尔曲线控制点
-    PointF mBeziervertex1 = new PointF(); // 贝塞尔曲线顶点
-    PointF mBezierEnd1 = new PointF(); // 贝塞尔曲线结束点
+    /**
+     * 贝塞尔曲线起始点
+     */
+    PointF mBezierStart1 = new PointF();
+    /**
+     * 贝塞尔曲线控制点
+     */
+    PointF mBezierControl1 = new PointF();
+    /**
+     * 贝塞尔曲线顶点
+     */
+    PointF mBeziervertex1 = new PointF();
+    /**
+     * 贝塞尔曲线结束点
+     */
+    PointF mBezierEnd1 = new PointF();
 
-    PointF mBezierStart2 = new PointF(); // 另一条贝塞尔曲线
+    // 另一条贝塞尔曲线
+    PointF mBezierStart2 = new PointF();
     PointF mBezierControl2 = new PointF();
     PointF mBeziervertex2 = new PointF();
     PointF mBezierEnd2 = new PointF();
@@ -45,9 +61,17 @@ public class SimulationAnimation extends AnimationProvider {
      */
     boolean mIsRTandLB;
     private float mMaxLength;
-    int[] mBackShadowColors;// 背面颜色组
-    int[] mFrontShadowColors;// 前面颜色组
-    GradientDrawable mBackShadowDrawableLR; // 有阴影的GradientDrawable
+    /**
+     * 背面颜色组
+     */
+    int[] mBackShadowColors;
+    /**
+     * 前面颜色组
+     */
+    int[] mFrontShadowColors;
+
+    // 有阴影的GradientDrawable
+    GradientDrawable mBackShadowDrawableLR;
     GradientDrawable mBackShadowDrawableRL;
     GradientDrawable mFolderShadowDrawableLR;
     GradientDrawable mFolderShadowDrawableRL;
@@ -59,6 +83,14 @@ public class SimulationAnimation extends AnimationProvider {
 
     Paint mPaint;
 
+    /**
+     * 仿真模式构造
+     *
+     * @param mCurrentBitmap  当前bitmap
+     * @param mNextBitmap
+     * @param width
+     * @param height
+     */
     public SimulationAnimation(Bitmap mCurrentBitmap, Bitmap mNextBitmap, int width, int height) {
         super(mCurrentBitmap, mNextBitmap, width, height);
 
@@ -70,15 +102,25 @@ public class SimulationAnimation extends AnimationProvider {
 
         createDrawable();
 
-        ColorMatrix cm = new ColorMatrix();//设置颜色数组
-//        float array[] = { 0.55f, 0, 0, 0, 80.0f,
-//                           0, 0.55f, 0, 0, 80.0f,
-//                           0, 0,0.55f, 0, 80.0f,
-//                           0, 0, 0, 0.2f, 0 };
-        float array[] = {1, 0, 0, 0, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 1, 0, 0,
-                0, 0, 0, 1, 0};
+        /**
+         * 色彩矩阵 详见 https://blog.csdn.net/xiongkai520520/article/details/52472638
+         * //设置颜色数组  色彩矩阵变换
+         * // 对角线上的取值范围是0-1的   0会去掉某个颜色
+         */
+        ColorMatrix cm = new ColorMatrix();
+        float array[] = {
+                // R 0 0 0 0  操作红色
+                0.55f, 0, 0, 0, 80.0f,
+                //  0 G 0 0 0  操作绿色
+                0, 0.55f, 0, 0, 80.0f,
+                // 0 0 B 0 0  操作蓝色
+                0, 0,0.55f, 0, 80.0f,
+                // 0 0 0 Alpha 0 操作透明度   更改此处 变化翻页背景页透明度
+                0, 0, 0, 0.2f, 0 };
+//        float array[] = {1, 0, 0, 0, 0,
+//                0, 1, 0, 0, 0,
+//                0, 0, 1, 0, 0,
+//                0, 0, 0, 1, 0};
         cm.set(array);
         mColorMatrixFilter = new ColorMatrixColorFilter(cm);
         mMatrix = new Matrix();
