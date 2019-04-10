@@ -23,14 +23,16 @@ public abstract class AnimationProvider {
 //    }
 
     public static enum Direction {
-        none(true),next(true), pre(true), up(false), down(false);
+        none(true), next(true), pre(true), up(false), down(false);
 
         public final boolean IsHorizontal;
 
         Direction(boolean isHorizontal) {
             IsHorizontal = isHorizontal;
         }
-    };
+    }
+
+    ;
 
     public static enum Animation {
         none, curl, slide, shift
@@ -38,7 +40,7 @@ public abstract class AnimationProvider {
 
 //    private Mode myMode = Mode.NoScrolling;
 
-    protected Bitmap mCurPageBitmap,mNextPageBitmap;
+    protected Bitmap mCurPageBitmap, mNextPageBitmap;
     protected float myStartX;
     protected float myStartY;
     protected int myEndX;
@@ -49,11 +51,14 @@ public abstract class AnimationProvider {
     protected int mScreenWidth;
     protected int mScreenHeight;
 
-    protected PointF mTouch = new PointF(); // 拖拽点
+    /**
+     * 拖拽点
+     */
+    protected PointF mTouch = new PointF();
     private Direction direction = Direction.none;
     private boolean isCancel = false;
 
-    public AnimationProvider(Bitmap mCurrentBitmap,Bitmap mNextBitmap,int width,int height) {
+    public AnimationProvider(Bitmap mCurrentBitmap, Bitmap mNextBitmap, int width, int height) {
         this.mCurPageBitmap = mCurrentBitmap;
         this.mNextPageBitmap = mNextBitmap;
         this.mScreenWidth = width;
@@ -67,33 +72,33 @@ public abstract class AnimationProvider {
     public abstract void drawStatic(Canvas canvas);
 
     //设置开始拖拽点
-    public void setStartPoint(float x,float y){
+    public void setStartPoint(float x, float y) {
         myStartX = x;
         myStartY = y;
     }
 
     //设置拖拽点
-    public void setTouchPoint(float x,float y){
+    public void setTouchPoint(float x, float y) {
         mTouch.x = x;
         mTouch.y = y;
     }
 
     //设置方向
-    public void setDirection(Direction direction){
+    public void setDirection(Direction direction) {
         this.direction = direction;
     }
 
-    public Direction getDirection(){
+    public Direction getDirection() {
         return direction;
     }
 
-    public void setCancel(boolean isCancel){
+    public void setCancel(boolean isCancel) {
         this.isCancel = isCancel;
     }
 
     public abstract void startAnimation(Scroller scroller);
 
-    public boolean getCancel(){
+    public boolean getCancel() {
         return isCancel;
     }
 

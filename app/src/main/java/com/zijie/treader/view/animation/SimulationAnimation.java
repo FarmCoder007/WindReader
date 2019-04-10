@@ -10,6 +10,7 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Region;
 import android.graphics.drawable.GradientDrawable;
+import android.util.Log;
 import android.widget.Scroller;
 
 /**
@@ -18,7 +19,7 @@ import android.widget.Scroller;
  */
 public class SimulationAnimation extends AnimationProvider {
     /**
-     * 拖拽点对应的页脚
+     * 拖拽点对应的页右下脚坐标  可能是屏幕宽
      */
     private int mCornerX = 1;
     private int mCornerY = 1;
@@ -27,6 +28,7 @@ public class SimulationAnimation extends AnimationProvider {
 
     /**
      * 贝塞尔曲线起始点
+     * PointF 里成员  x y为float类型  Point则是int类型
      */
     PointF mBezierStart1 = new PointF();
     /**
@@ -48,7 +50,13 @@ public class SimulationAnimation extends AnimationProvider {
     PointF mBeziervertex2 = new PointF();
     PointF mBezierEnd2 = new PointF();
 
+    /**
+     * 触摸点  和  右下页脚点的中点x坐标
+     */
     float mMiddleX;
+    /**
+     * 触摸点  和  右下页脚点的中点y坐标
+     */
     float mMiddleY;
     float mDegrees;
     float mTouchToCornerDis;
@@ -86,7 +94,7 @@ public class SimulationAnimation extends AnimationProvider {
     /**
      * 仿真模式构造
      *
-     * @param mCurrentBitmap  当前bitmap
+     * @param mCurrentBitmap 当前bitmap
      * @param mNextBitmap
      * @param width
      * @param height
@@ -114,9 +122,9 @@ public class SimulationAnimation extends AnimationProvider {
                 //  0 G 0 0 0  操作绿色
                 0, 0.55f, 0, 0, 80.0f,
                 // 0 0 B 0 0  操作蓝色
-                0, 0,0.55f, 0, 80.0f,
+                0, 0, 0.55f, 0, 80.0f,
                 // 0 0 0 Alpha 0 操作透明度   更改此处 变化翻页背景页透明度
-                0, 0, 0, 0.2f, 0 };
+                0, 0, 0, 0.2f, 0};
 //        float array[] = {1, 0, 0, 0, 0,
 //                0, 1, 0, 0, 0,
 //                0, 0, 1, 0, 0,
@@ -135,8 +143,8 @@ public class SimulationAnimation extends AnimationProvider {
             calcPoints();
             drawCurrentPageArea(canvas, mCurPageBitmap, mPath0);
             drawNextPageAreaAndShadow(canvas, mNextPageBitmap);
-            drawCurrentPageShadow(canvas);
-            drawCurrentBackArea(canvas, mCurPageBitmap);
+//            drawCurrentPageShadow(canvas);
+//            drawCurrentBackArea(canvas, mCurPageBitmap);
         } else {
             calcPoints();
             drawCurrentPageArea(canvas, mNextPageBitmap, mPath0);
@@ -225,6 +233,12 @@ public class SimulationAnimation extends AnimationProvider {
         calcCornerXY(x, y);
     }
 
+    /**
+     * 设置拖拽点point
+     *
+     * @param x
+     * @param y
+     */
     @Override
     public void setTouchPoint(float x, float y) {
         super.setTouchPoint(x, y);
@@ -507,32 +521,49 @@ public class SimulationAnimation extends AnimationProvider {
             canvas.clipPath(mPath1, Region.Op.INTERSECT);
         } catch (Exception e) {
         }
-
-
         canvas.drawBitmap(bitmap, 0, 0, null);
         canvas.rotate(mDegrees, mBezierStart1.x, mBezierStart1.y);
-        mBackShadowDrawable.setBounds(leftx, (int) mBezierStart1.y, rightx,
-                (int) (mMaxLength + mBezierStart1.y));//左上及右下角的xy坐标值,构成一个矩形
+        //左上及右下角的xy坐标值,构成一个矩形
+        mBackShadowDrawable.setBounds(leftx, (int) mBezierStart1.y, rightx, (int) (mMaxLength + mBezierStart1.y));
         mBackShadowDrawable.draw(canvas);
         canvas.restore();
     }
 
+    /**
+     * 绘制上方页     整个界面 -
+     *
+     * @param canvas
+     * @param bitmap
+     * @param path
+     */
     private void drawCurrentPageArea(Canvas canvas, Bitmap bitmap, Path path) {
+        // mPath0 从屏幕右边起第一条二阶贝塞尔曲线
         mPath0.reset();
+        // 移到第一条二阶贝塞尔起点
         mPath0.moveTo(mBezierStart1.x, mBezierStart1.y);
+        // 第一段弧线  传入控制点和终点
         mPath0.quadTo(mBezierControl1.x, mBezierControl1.y, mBezierEnd1.x,
                 mBezierEnd1.y);
+        // 第一条弧线到上方页脚 直线
         mPath0.lineTo(mTouch.x, mTouch.y);
+        // 上方页脚 到第二条贝塞尔曲线终点【起点】
         mPath0.lineTo(mBezierEnd2.x, mBezierEnd2.y);
+        // 第二个贝塞尔曲线
         mPath0.quadTo(mBezierControl2.x, mBezierControl2.y, mBezierStart2.x,
                 mBezierStart2.y);
+        // 链接到右下角
         mPath0.lineTo(mCornerX, mCornerY);
+        // 右下角链接到起点 形成闭环  【闭环部分用来绘制上方页阴影和下方页右下角】
         mPath0.close();
 
+        // 保存绘制前的状态
         canvas.save();
+        // 先裁剪画布再绘制   【XOR就是全集的减去交集  剩余的部分  即可视的上一页文字】
         canvas.clipPath(path, Region.Op.XOR);
+        // 裁剪完的画布 可绘制区域就是上方可视页
         canvas.drawBitmap(bitmap, 0, 0, null);
         try {
+            // restore：用来恢复Canvas之前保存的状态。防止save后对Canvas执行的操作对后续的绘制有影响。
             canvas.restore();
         } catch (Exception e) {
 
@@ -567,70 +598,99 @@ public class SimulationAnimation extends AnimationProvider {
 
     }
 
+    /**
+     * 计算各个点的坐标
+     */
     private void calcPoints() {
+        // 算出触摸点  和  右下页脚点中点坐标
         mMiddleX = (mTouch.x + mCornerX) / 2;
         mMiddleY = (mTouch.y + mCornerY) / 2;
-        mBezierControl1.x = mMiddleX - (mCornerY - mMiddleY)
-                * (mCornerY - mMiddleY) / (mCornerX - mMiddleX);
+        // 算出第一条贝塞尔曲线控制点 坐标
+        /**
+         *  中点mMiddle到屏幕底部的距离= mCornerY【屏幕高度】- mMiddleY【中点y坐标】
+         *  由相似三角形对应边成比例 算出 控制点1 到 【中点到屏幕下方垂直点的距离 em】 即   em=gm*gm/mf;
+         *  那么控制点e的横坐标为中点横坐标 - em的距离  即如下
+         */
+        mBezierControl1.x = mMiddleX - (mCornerY - mMiddleY) * (mCornerY - mMiddleY) / (mCornerX - mMiddleX);
+        // 屏幕高 【这条控制点一直在屏幕最下边】
         mBezierControl1.y = mCornerY;
-        mBezierControl2.x = mCornerX;
-        //   mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
-        //   * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
 
+
+        // 第二条贝塞尔曲线控制点坐标 【控制点一直在屏幕最右边】
+        mBezierControl2.x = mCornerX;
+        //   mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)* (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
+        //  同理算出控制点2的坐标  【为了解决起始控制点 快与 右下角重合  分母不为0】
         float f4 = mCornerY - mMiddleY;
         if (f4 == 0) {
-            mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
-                    * (mCornerX - mMiddleX) / 0.1f;
-            //    Log.d("PageWidget",""+f4);
+            mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX) * (mCornerX - mMiddleX) / 0.1f;
+            Log.d("PageWidget", "" + f4);
         } else {
-            mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
-                    * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
-            //    Log.d("PageWidget","没有进入if判断"+ mBezierControl2.y + "");
+            mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX) * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
+            Log.d("PageWidget", "没有进入if判断" + mBezierControl2.y + "");
         }
 
         // Log.i("hmg", "mTouchX  " + mTouch.x + "  mTouchY  " + mTouch.y);
-        // Log.i("hmg", "mBezierControl1.x  " + mBezierControl1.x
-        // + "  mBezierControl1.y  " + mBezierControl1.y);
-        // Log.i("hmg", "mBezierControl2.x  " + mBezierControl2.x
-        // + "  mBezierControl2.y  " + mBezierControl2.y);
+        // Log.i("hmg", "mBezierControl1.x  " + mBezierControl1.x + "  mBezierControl1.y  " + mBezierControl1.y);
+        // Log.i("hmg", "mBezierControl2.x  " + mBezierControl2.x + "  mBezierControl2.y  " + mBezierControl2.y);
 
-        mBezierStart1.x = mBezierControl1.x - (mCornerX - mBezierControl1.x)
-                / 2;
+        /**
+         *  算出第一条贝塞尔起始点 【也是一直在屏幕底部】
+         *  算法：设n为ag中点，同理，根据相似三角形fgh和fnj，且比例为2:3
+         *  即fe/fc = 2/3 【fe 为 mCornerX - mBezierControl1.x    fc 为mCornerX - c横坐标  】
+         *  整理后c横坐标如下
+         */
+        mBezierStart1.x = mBezierControl1.x - (mCornerX - mBezierControl1.x) / 2;
         mBezierStart1.y = mCornerY;
 
-        // 当mBezierStart1.x < 0或者mBezierStart1.x > 480时
-        // 如果继续翻页，会出现BUG故在此限制
+        /**
+         * 当mBezierStart1.x < 0或者mBezierStart1.x > 屏幕宽时
+         * 如果继续翻页，会出现BUG故在此限制
+         * 限制贝塞尔起始点 不能超过屏幕左边距  【即不能为负数】  这时改变触摸点位置 重新计算mTouch
+         * 由相似梯形  重新算出 mTouch 点的位置   从而重新算各个点的位置
+         */
         if (mTouch.x > 0 && mTouch.x < mScreenWidth) {
             if (mBezierStart1.x < 0 || mBezierStart1.x > mScreenWidth) {
-                if (mBezierStart1.x < 0)
+                // 贝塞尔1的起始点超出屏幕了 算出超出屏幕时到屏幕右下角的距离【图四中 cf的距离 如下】
+                if (mBezierStart1.x < 0) {
                     mBezierStart1.x = mScreenWidth - mBezierStart1.x;
+                }
+                // 下面根据相似图形算出新的触摸点坐标 【pf的距离如下】
+                float pf = Math.abs(mCornerX - mTouch.x);
+                // 相似梯形 对应边成比例 【如图四p1f/pf = width/cf】
+                float p1f = mScreenWidth * pf / mBezierStart1.x;
+                // 算出 起始点放在临界值位置时  新的触摸点横坐标
+                mTouch.x = Math.abs(mCornerX - p1f);
 
-                float f1 = Math.abs(mCornerX - mTouch.x);
-                float f2 = mScreenWidth * f1 / mBezierStart1.x;
-                mTouch.x = Math.abs(mCornerX - f2);
 
-                float f3 = Math.abs(mCornerX - mTouch.x)
-                        * Math.abs(mCornerY - mTouch.y) / f1;
-                mTouch.y = Math.abs(mCornerY - f3);
+                /**
+                 *  oldTouchHeight 为旧的触摸点到底部屏幕高度
+                 *  oldTouchHeight/newTouchHeight = p1f/pf  而p1f = 屏幕宽度- 新触摸点的横坐标 【Math.abs(mCornerX - mTouch.x)】
+                 *
+                 * 算出新触摸点纵坐标 【newTouchHeight为 新触摸点到底部的距离】
+                 */
+                float oldTouchHeight = Math.abs(mCornerY - mTouch.y);
+                float newTouchHeight = Math.abs(mCornerX - mTouch.x) * oldTouchHeight / pf;
+                mTouch.y = Math.abs(mCornerY - newTouchHeight);
 
+
+                // mCornerX mCornerY 是不变的   由新的触摸点和页脚点    重新计算出 绘制用的所有点
                 mMiddleX = (mTouch.x + mCornerX) / 2;
                 mMiddleY = (mTouch.y + mCornerY) / 2;
 
-                mBezierControl1.x = mMiddleX - (mCornerY - mMiddleY)
-                        * (mCornerY - mMiddleY) / (mCornerX - mMiddleX);
+                // 重新计算1 的控制点
+                mBezierControl1.x = mMiddleX - (mCornerY - mMiddleY) * (mCornerY - mMiddleY) / (mCornerX - mMiddleX);
                 mBezierControl1.y = mCornerY;
 
+                // 重新计算2的控制点
                 mBezierControl2.x = mCornerX;
                 //    mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
                 //  * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
 
                 float f5 = mCornerY - mMiddleY;
                 if (f5 == 0) {
-                    mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
-                            * (mCornerX - mMiddleX) / 0.1f;
+                    mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX) * (mCornerX - mMiddleX) / 0.1f;
                 } else {
-                    mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX)
-                            * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
+                    mBezierControl2.y = mMiddleY - (mCornerX - mMiddleX) * (mCornerX - mMiddleX) / (mCornerY - mMiddleY);
                     //    Log.d("PageWidget", mBezierControl2.y + "");
                 }
 
@@ -641,31 +701,42 @@ public class SimulationAnimation extends AnimationProvider {
                 // + "  mBezierControl1.y -- " + mBezierControl1.y);
                 // Log.i("hmg", "mBezierControl2.x -- " + mBezierControl2.x
                 // + "  mBezierControl2.y -- " + mBezierControl2.y);
-                mBezierStart1.x = mBezierControl1.x
-                        - (mCornerX - mBezierControl1.x) / 2;
+                // 重新计算1的起始点横坐标  纵坐标一直是屏高
+                mBezierStart1.x = mBezierControl1.x - (mCornerX - mBezierControl1.x) / 2;
             }
         }
         mBezierStart2.x = mCornerX;
-        mBezierStart2.y = mBezierControl2.y - (mCornerY - mBezierControl2.y)
-                / 2;
+        /**
+         *  如图3  根据相似三角形 fgh 和fnj   得出 fg/fn = 2/3 = fh/fj
+         *  fh = mCornerY - mBezierControl2.y 【屏幕高度 - 贝塞尔2的控制点纵坐标】
+         *  fj = mCornerY -  mBezierStart2.y  = 3(mCornerY - mBezierControl2.y)/2 整理得如下
+         */
+        mBezierStart2.y = mBezierControl2.y - (mCornerY - mBezierControl2.y) / 2;
 
-        mTouchToCornerDis = (float) Math.hypot((mTouch.x - mCornerX),
-                (mTouch.y - mCornerY));
 
-        mBezierEnd1 = getCross(mTouch, mBezierControl1, mBezierStart1,
-                mBezierStart2);
-        mBezierEnd2 = getCross(mTouch, mBezierControl2, mBezierStart1,
-                mBezierStart2);
+        /**
+         * 贝塞尔1  2 的终点 【即求交点坐标】
+         */
+        mBezierEnd1 = getCrossPoint(mTouch, mBezierControl1, mBezierStart1, mBezierStart2);
+        mBezierEnd2 = getCrossPoint(mTouch, mBezierControl2, mBezierStart1, mBezierStart2);
 
-        // Log.i("hmg", "mBezierEnd1.x  " + mBezierEnd1.x + "  mBezierEnd1.y  "
-        // + mBezierEnd1.y);
-        // Log.i("hmg", "mBezierEnd2.x  " + mBezierEnd2.x + "  mBezierEnd2.y  "
-        // + mBezierEnd2.y);
+        // Log.i("hmg", "mBezierEnd1.x  " + mBezierEnd1.x + "  mBezierEnd1.y  "+ mBezierEnd1.y);
+        // Log.i("hmg", "mBezierEnd2.x  " + mBezierEnd2.x + "  mBezierEnd2.y  "+ mBezierEnd2.y);
 
-        /*
+        /**
+         * Math.hypot（float a,float b） = a方 + b方 的开平方即 sqrt(x*x+y*y)
+         *  返回 触摸点   在   屏幕下方 和右方的投影到右下角形成三角形的斜边
+         */
+        mTouchToCornerDis = (float) Math.hypot((mTouch.x - mCornerX), (mTouch.y - mCornerY));
+
+
+        /**
+         * 贝塞尔1  2 的顶点  如图三
+         * p 为 cd的中点   d 为pe 中点   先求出p点的xy
+         * p横坐标为（cx + bx）/2 即贝塞尔1的起点 + 终点 /2
+         * p纵坐标为 （cy + by）/2 =
+         * 有p点 和e点的坐标 求中点的坐标  ((mBezierStart1.x+mBezierEnd1.x)/2+mBezierControl1.x)/2 化简等价于(mBezierStart1.x+ 2*mBezierControl1.x+mBezierEnd1.x) / 4
          * mBeziervertex1.x 推导
-         * ((mBezierStart1.x+mBezierEnd1.x)/2+mBezierControl1.x)/2 化简等价于
-         * (mBezierStart1.x+ 2*mBezierControl1.x+mBezierEnd1.x) / 4
          */
         mBeziervertex1.x = (mBezierStart1.x + 2 * mBezierControl1.x + mBezierEnd1.x) / 4;
         mBeziervertex1.y = (2 * mBezierControl1.y + mBezierStart1.y + mBezierEnd1.y) / 4;
@@ -682,17 +753,20 @@ public class SimulationAnimation extends AnimationProvider {
      * @param P4
      * @return
      */
-    public PointF getCross(PointF P1, PointF P2, PointF P3, PointF P4) {
-        PointF CrossP = new PointF();
-        // 二元函数通式： y=ax+b
+    public PointF getCrossPoint(PointF P1, PointF P2, PointF P3, PointF P4) {
+        PointF crossoverPoint = new PointF();
+        // 二元函数通式： y=ax+b  用2点求ab 列2元一次方程 求解
+        // 将2点P1  P2 带入方程    P1.y = P1.x * a +b;    P2.y = P2.x * a +b; 求解出  第一个方程的 a b
         float a1 = (P2.y - P1.y) / (P2.x - P1.x);
         float b1 = ((P1.x * P2.y) - (P2.x * P1.y)) / (P1.x - P2.x);
 
+        // 同样将点带入方程整理 出第二个方程的a  b
         float a2 = (P4.y - P3.y) / (P4.x - P3.x);
         float b2 = ((P3.x * P4.y) - (P4.x * P3.y)) / (P3.x - P4.x);
-        CrossP.x = (b2 - b1) / (a1 - a2);
-        CrossP.y = a1 * CrossP.x + b1;
-        return CrossP;
+        // 最后2条线求交点坐标  令交点坐标为xy  求解 方程组
+        crossoverPoint.x = (b2 - b1) / (a1 - a2);
+        crossoverPoint.y = a1 * crossoverPoint.x + b1;
+        return crossoverPoint;
     }
 
 }
