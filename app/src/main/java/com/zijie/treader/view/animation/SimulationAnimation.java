@@ -141,10 +141,14 @@ public class SimulationAnimation extends AnimationProvider {
     public void drawMove(Canvas canvas) {
         if (getDirection().equals(Direction.next)) {
             calcPoints();
+            // 绘制上页部分
             drawCurrentPageArea(canvas, mCurPageBitmap, mPath0);
+            // 下方页文字  和卷起的部分在下方页的投影
             drawNextPageAreaAndShadow(canvas, mNextPageBitmap);
-//            drawCurrentPageShadow(canvas);
-//            drawCurrentBackArea(canvas, mCurPageBitmap);
+            // 绘制翻起页  页脚 在 上方页的阴影
+            drawCurrentPageShadow(canvas);
+            // 绘制翻起页背面  文字和阴影
+            drawCurrentBackArea(canvas, mCurPageBitmap);
         } else {
             calcPoints();
             drawCurrentPageArea(canvas, mNextPageBitmap, mPath0);
@@ -227,6 +231,12 @@ public class SimulationAnimation extends AnimationProvider {
         }
     }
 
+    /**
+     * 手指按下开始点
+     *
+     * @param x
+     * @param y
+     */
     @Override
     public void setStartPoint(float x, float y) {
         super.setStartPoint(x, y);
@@ -258,44 +268,30 @@ public class SimulationAnimation extends AnimationProvider {
     private void createDrawable() {
         int[] color = {0x333333, 0xb0333333};
         // 参数一  渐变色方向 从右向左  参数二 渐变色数组
-        mFolderShadowDrawableRL = new GradientDrawable(
-                GradientDrawable.Orientation.RIGHT_LEFT, color);
-        mFolderShadowDrawableRL
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFolderShadowDrawableRL = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, color);
+        mFolderShadowDrawableRL.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
-        mFolderShadowDrawableLR = new GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT, color);
-        mFolderShadowDrawableLR
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFolderShadowDrawableLR = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, color);
+        mFolderShadowDrawableLR.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
         mBackShadowColors = new int[]{0xff111111, 0x111111};
-        mBackShadowDrawableRL = new GradientDrawable(
-                GradientDrawable.Orientation.RIGHT_LEFT, mBackShadowColors);
+        mBackShadowDrawableRL = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, mBackShadowColors);
         mBackShadowDrawableRL.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
-        mBackShadowDrawableLR = new GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT, mBackShadowColors);
+        mBackShadowDrawableLR = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, mBackShadowColors);
         mBackShadowDrawableLR.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
         mFrontShadowColors = new int[]{0x80111111, 0x111111};
-        mFrontShadowDrawableVLR = new GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT, mFrontShadowColors);
-        mFrontShadowDrawableVLR
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
-        mFrontShadowDrawableVRL = new GradientDrawable(
-                GradientDrawable.Orientation.RIGHT_LEFT, mFrontShadowColors);
-        mFrontShadowDrawableVRL
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFrontShadowDrawableVLR = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, mFrontShadowColors);
+        mFrontShadowDrawableVLR.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFrontShadowDrawableVRL = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, mFrontShadowColors);
+        mFrontShadowDrawableVRL.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
-        mFrontShadowDrawableHTB = new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM, mFrontShadowColors);
-        mFrontShadowDrawableHTB
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFrontShadowDrawableHTB = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, mFrontShadowColors);
+        mFrontShadowDrawableHTB.setGradientType(GradientDrawable.LINEAR_GRADIENT);
 
-        mFrontShadowDrawableHBT = new GradientDrawable(
-                GradientDrawable.Orientation.BOTTOM_TOP, mFrontShadowColors);
-        mFrontShadowDrawableHBT
-                .setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        mFrontShadowDrawableHBT = new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, mFrontShadowColors);
+        mFrontShadowDrawableHBT.setGradientType(GradientDrawable.LINEAR_GRADIENT);
     }
 
     /**
@@ -316,7 +312,7 @@ public class SimulationAnimation extends AnimationProvider {
     }
 
     /**
-     * 绘制翻起页背面
+     * 绘制翻起页背面  文字和阴影
      *
      * @param canvas
      * @param bitmap
@@ -356,8 +352,7 @@ public class SimulationAnimation extends AnimationProvider {
 
         mPaint.setColorFilter(mColorMatrixFilter);
 
-        float dis = (float) Math.hypot(mCornerX - mBezierControl1.x,
-                mBezierControl2.y - mCornerY);
+        float dis = (float) Math.hypot(mCornerX - mBezierControl1.x, mBezierControl2.y - mCornerY);
         float f8 = (mCornerX - mBezierControl1.x) / dis;
         float f9 = (mBezierControl2.y - mCornerY) / dis;
         mMatrixArray[0] = 1 - 2 * f9 * f9;
@@ -372,30 +367,23 @@ public class SimulationAnimation extends AnimationProvider {
         // canvas.drawBitmap(bitmap, mMatrix, null);
         mPaint.setColorFilter(null);
 
-        canvas.rotate(mDegrees, mBezierStart1.x, mBezierStart1.y);
-        mFolderShadowDrawable.setBounds(left, (int) mBezierStart1.y, right,
-                (int) (mBezierStart1.y + mMaxLength));
+        canvas.rotate(-(mDegrees + 90), mBezierStart1.x, mBezierStart1.y);
+        mFolderShadowDrawable.setBounds(left, (int) mBezierStart1.y, right, (int) (mBezierStart1.y + mMaxLength));
         mFolderShadowDrawable.draw(canvas);
         canvas.restore();
     }
 
     /**
-     * 绘制翻起页的阴影
+     * 绘制翻起页  页脚 在 上方页的阴影
      *
      * @param canvas
      */
     public void drawCurrentPageShadow(Canvas canvas) {
         double degree;
         if (mIsRTandLB) {
-            degree = Math.PI
-                    / 4
-                    - Math.atan2(mBezierControl1.y - mTouch.y, mTouch.x
-                    - mBezierControl1.x);
+            degree = Math.PI / 4 - Math.atan2(mBezierControl1.y - mTouch.y, mTouch.x - mBezierControl1.x);
         } else {
-            degree = Math.PI
-                    / 4
-                    - Math.atan2(mTouch.y - mBezierControl1.y, mTouch.x
-                    - mBezierControl1.x);
+            degree = Math.PI / 4 - Math.atan2(mTouch.y - mBezierControl1.y, mTouch.x - mBezierControl1.x);
         }
         // 翻起页阴影顶点与touch点的距离
         double d1 = (float) 25 * 1.414 * Math.cos(degree);
@@ -435,12 +423,9 @@ public class SimulationAnimation extends AnimationProvider {
             mCurrentPageShadow = mFrontShadowDrawableVRL;
         }
 
-        rotateDegrees = (float) Math.toDegrees(Math.atan2(mTouch.x
-                - mBezierControl1.x, mBezierControl1.y - mTouch.y));
+        rotateDegrees = (float) Math.toDegrees(Math.atan2(mTouch.x - mBezierControl1.x, mBezierControl1.y - mTouch.y));
         canvas.rotate(rotateDegrees, mBezierControl1.x, mBezierControl1.y);
-        mCurrentPageShadow.setBounds(leftx,
-                (int) (mBezierControl1.y - mMaxLength), rightx,
-                (int) (mBezierControl1.y));
+        mCurrentPageShadow.setBounds(leftx, (int) (mBezierControl1.y - mMaxLength), rightx, (int) (mBezierControl1.y));
         mCurrentPageShadow.draw(canvas);
         canvas.restore();
 
@@ -466,8 +451,7 @@ public class SimulationAnimation extends AnimationProvider {
             rightx = (int) (mBezierControl2.y + 1);
             mCurrentPageShadow = mFrontShadowDrawableHBT;
         }
-        rotateDegrees = (float) Math.toDegrees(Math.atan2(mBezierControl2.y
-                - mTouch.y, mBezierControl2.x - mTouch.x));
+        rotateDegrees = (float) Math.toDegrees(Math.atan2(mBezierControl2.y - mTouch.y, mBezierControl2.x - mTouch.x));
         canvas.rotate(rotateDegrees, mBezierControl2.x, mBezierControl2.y);
         float temp;
         if (mBezierControl2.y < 0)
@@ -477,14 +461,9 @@ public class SimulationAnimation extends AnimationProvider {
 
         int hmg = (int) Math.hypot(mBezierControl2.x, temp);
         if (hmg > mMaxLength)
-            mCurrentPageShadow
-                    .setBounds((int) (mBezierControl2.x - 25) - hmg, leftx,
-                            (int) (mBezierControl2.x + mMaxLength) - hmg,
-                            rightx);
+            mCurrentPageShadow.setBounds((int) (mBezierControl2.x - 25) - hmg, leftx, (int) (mBezierControl2.x + mMaxLength) - hmg, rightx);
         else
-            mCurrentPageShadow.setBounds(
-                    (int) (mBezierControl2.x - mMaxLength), leftx,
-                    (int) (mBezierControl2.x), rightx);
+            mCurrentPageShadow.setBounds((int) (mBezierControl2.x - mMaxLength), leftx, (int) (mBezierControl2.x), rightx);
 
         // Log.i("hmg", "mBezierControl2.x   " + mBezierControl2.x
         // + "  mBezierControl2.y  " + mBezierControl2.y);
@@ -492,7 +471,14 @@ public class SimulationAnimation extends AnimationProvider {
         canvas.restore();
     }
 
+    /**
+     * 绘制下方页 文字   和   上方页在下方页卷起部分的阴影
+     *
+     * @param canvas
+     * @param bitmap
+     */
     private void drawNextPageAreaAndShadow(Canvas canvas, Bitmap bitmap) {
+        // 获取绘制下方文字区域用  该部分线区域 与 带贝塞尔区域取交集 即为下方可视文字的区域
         mPath1.reset();
         mPath1.moveTo(mBezierStart1.x, mBezierStart1.y);
         mPath1.lineTo(mBeziervertex1.x, mBeziervertex1.y);
@@ -500,30 +486,41 @@ public class SimulationAnimation extends AnimationProvider {
         mPath1.lineTo(mBezierStart2.x, mBezierStart2.y);
         mPath1.lineTo(mCornerX, mCornerY);
         mPath1.close();
+        // Math.atan2   算出2点的极坐标【范围-π到π】   Math.toDegrees将参数转换成角度
+        //  mBackShadowDrawable.setBounds 是平行于xy坐标系的 要想倾斜  计算 画布旋转角度
+        // 如图五  需要逆时针旋转画布 如图五  待计算角度为 角度feh+90度    由于逆向旋转  所以为负数
+        // 计算角度为Math.atan2  函数   直角三角形中   y= 对面直角边  x = 相邻直角边
+        mDegrees = (float) Math.toDegrees(Math.atan2(mCornerY - mBezierControl2.y, mCornerX - mBezierControl1.x));
 
-        mDegrees = (float) Math.toDegrees(Math.atan2(mBezierControl1.x
-                - mCornerX, mBezierControl2.y - mCornerY));
         int leftx;
         int rightx;
         GradientDrawable mBackShadowDrawable;
-        if (mIsRTandLB) {  //左下及右上
+        if (mIsRTandLB) {
+            //左下及右上
+            Log.e("flag", "---------------------上：" + mIsRTandLB);
             leftx = (int) (mBezierStart1.x);
             rightx = (int) (mBezierStart1.x + mTouchToCornerDis / 4);
             mBackShadowDrawable = mBackShadowDrawableLR;
         } else {
+            Log.e("flag", "---------------------下：" + mIsRTandLB);
             leftx = (int) (mBezierStart1.x - mTouchToCornerDis / 4);
             rightx = (int) mBezierStart1.x;
             mBackShadowDrawable = mBackShadowDrawableRL;
         }
         canvas.save();
+        // 先裁剪出下方文字区域 的画布
         try {
+            // 先裁剪出mPath0 与画布交集的部分
             canvas.clipPath(mPath0);
+            // mPath1 与 mPath0交集部分 就是可以显示文字的部分
             canvas.clipPath(mPath1, Region.Op.INTERSECT);
         } catch (Exception e) {
         }
+        // 绘制下方文字的bitmap
         canvas.drawBitmap(bitmap, 0, 0, null);
-        canvas.rotate(mDegrees, mBezierStart1.x, mBezierStart1.y);
-        //左上及右下角的xy坐标值,构成一个矩形
+        // 旋转画布 绕mBezierStart1  旋转指定角度  再画阴影
+        canvas.rotate(-(mDegrees + 90), mBezierStart1.x, mBezierStart1.y);
+        //左上及右下角的xy坐标值,构成一个矩形   阴影画在指定矩形里  [是平行于坐标系xy 要想倾斜  计算旋转画布的角度]
         mBackShadowDrawable.setBounds(leftx, (int) mBezierStart1.y, rightx, (int) (mMaxLength + mBezierStart1.y));
         mBackShadowDrawable.draw(canvas);
         canvas.restore();
