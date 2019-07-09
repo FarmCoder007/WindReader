@@ -71,7 +71,9 @@ public abstract class AnimationProvider {
     //绘制不滑动页面
     public abstract void drawStatic(Canvas canvas);
 
-    //设置开始拖拽点
+    /**
+     * 设置开始拖拽点
+     */
     public void setStartPoint(float x, float y) {
         myStartX = x;
         myStartY = y;

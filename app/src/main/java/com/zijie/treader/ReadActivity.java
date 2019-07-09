@@ -117,9 +117,9 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
      */
     private int screenWidth, screenHeight;
     /**
-     * popwindow是否显示
+     * 设置 popwindow是否显示
      */
-    private Boolean isShow = false;
+    private Boolean isShowReadSettingDialog = false;
     private SettingDialog mSettingDialog;
     private PageModeDialog mPageModeDialog;
     private Boolean mDayOrNight;
@@ -304,10 +304,16 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
             }
         });
 
+        /**
+         *  设置阅读view 的触摸监听
+         */
         bookPageWidget.setTouchListener(new PageWidget.TouchListener() {
+            /**
+             *  中心点击回调   处理工具栏
+             */
             @Override
             public void center() {
-                if (isShow) {
+                if (isShowReadSettingDialog) {
                     hideReadSetting();
                 } else {
                     showReadSetting();
@@ -316,7 +322,8 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
 
             @Override
             public Boolean prePage() {
-                if (isShow || isSpeaking) {
+                // 展示 设置工具栏    和 听书  不能翻页
+                if (isShowReadSettingDialog || isSpeaking) {
                     return false;
                 }
 
@@ -324,17 +331,20 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
                 if (pageFactory.isfirstPage()) {
                     return false;
                 }
-
                 return true;
             }
 
+            /**
+             *   触摸时尝试  调用 翻页    并返回是否还有下一页
+             * @return
+             */
             @Override
             public Boolean nextPage() {
                 Log.e("setTouchListener", "nextPage");
-                if (isShow || isSpeaking) {
+                if (isShowReadSettingDialog || isSpeaking) {
                     return false;
                 }
-
+                // 先尝试翻页  再判断是否是最后一页
                 pageFactory.nextPage();
                 if (pageFactory.islastPage()) {
                     return false;
@@ -372,7 +382,7 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isShow) {
+        if (!isShowReadSettingDialog) {
             hideSystemUI();
         }
         if (mSpeechSynthesizer != null) {
@@ -404,7 +414,7 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // TODO Auto-generated method stub
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (isShow) {
+            if (isShowReadSettingDialog) {
                 hideReadSetting();
                 return true;
             }
@@ -610,7 +620,7 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
      * 展示设置弹窗
      */
     private void showReadSetting() {
-        isShow = true;
+        isShowReadSettingDialog = true;
         rl_progress.setVisibility(View.GONE);
 
         if (isSpeaking) {
@@ -635,7 +645,7 @@ public class ReadActivity extends BaseActivity implements SpeechSynthesizerListe
      * 隐藏设置弹窗
      */
     private void hideReadSetting() {
-        isShow = false;
+        isShowReadSettingDialog = false;
         Animation bottomAnim = AnimationUtils.loadAnimation(this, R.anim.dialog_exit);
         Animation topAnim = AnimationUtils.loadAnimation(this, R.anim.dialog_top_exit);
         if (rl_bottom.getVisibility() == View.VISIBLE) {
